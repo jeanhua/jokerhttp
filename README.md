@@ -20,7 +20,7 @@ JokerHttp 是一个轻量、简洁的 Go 语言 HTTP 框架，提供如下核心
 使用 `go get` 安装 JokerHttp：
 
 ```bash
-go get "https://github.com/jeanhua/jokerhttp"
+go get "github.com/jeanhua/jokerhttp"
 ```
 
 ### 基础示例
