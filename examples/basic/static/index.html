@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/components/prism-go.min.js"></script>
+    <title>JokerHttp - 轻量级Go HTTP服务器</title>
+    <style>
+        :root {
+            --primary: #6c5ce7;
+            --secondary: #a29bfe;
+            --dark: #2d3436;
+            --light: #f5f6fa;
+            --accent: #00cec9;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background-color: var(--light);
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        h1 {
+            color: var(--primary);
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .tagline {
+            font-size: 1.2rem;
+            color: var(--dark);
+            opacity: 0.8;
+        }
+
+        .highlight {
+            background-color: var(--secondary);
+            color: white;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 3rem 0;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .feature-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .cta {
+            text-align: center;
+            margin: 4rem 0;
+        }
+
+        .btn {
+            display: inline-block;
+            background-color: var(--primary);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background-color: var(--secondary);
+        }
+
+        .code-block {
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            margin: 2rem 0;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 4rem;
+            color: var(--dark);
+            opacity: 0.6;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>JokerHttp</h1>
+            <p class="tagline">一个用<span class="highlight">Go语言</span>开发的轻量级HTTP服务器</p>
+        </header>
+
+        <div class="intro">
+            <p>JokerHttp是一个简单、高效且易于使用的HTTP服务器，专为现代Web开发需求而设计。它结合了Go语言的强大性能和简洁语法，为您提供快速部署Web应用的解决方案。</p>
+        </div>
+
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3 class="feature-title">高性能</h3>
+                <p>利用Go语言的并发特性，提供卓越的性能表现，轻松处理高并发请求。</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔧</div>
+                <h3 class="feature-title">简单易用</h3>
+                <p>简洁的API设计，几行代码即可启动服务器，快速搭建您的Web应用。</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🛡️</div>
+                <h3 class="feature-title">安全可靠</h3>
+                <p>内置基本安全防护，帮助您构建更安全的Web应用程序。</p>
+            </div>
+        </div>
+
+        <div class="code-block">
+            <pre>
+<code class="language-go">package main
+
+    import (
+        "fmt"
+        "jokerhttp/engine"
+        "net/http"
+        "net/url"
+    )
+    
+    func main() {
+        // 初始化引擎
+        joker := &engine.JokerEngine{}
+        joker.Init()
+        joker.SetPort(1314)
+    
+        // 添加日志中间件
+        joker.Use(func(ctx *engine.Contex) {
+            println("Request received:", ctx.Request.URL.Path)
+            ctx.Next()
+            println("Response sent")
+        })
+    
+        // 添加认证中间件
+        joker.Use(func(ctx *engine.Contex) {
+            if ctx.Request.Header.Get("Authorization") != "secret" {
+                ctx.AbortWithStatusJSON(401, map[string]string{"error": "Unauthorized"})
+                ctx.Abort()
+            }
+            ctx.Next()
+        })
+    
+        // 添加路由
+        joker.MapGet("/hello", func(r *http.Request, p url.Values) (int, interface{}) {
+            name := p.Get("name")
+            if name == "" {
+                name = "World"
+            }
+            return 200, map[string]string{"message": "Hello, " + name + "!"}
+        })
+    
+        joker.MapPost("/echo", func(r *http.Request, b []byte, p url.Values) (int, interface{}) {
+            return 200, map[string]string{"original": string(b)}
+        })
+    
+        // 静态文件服务
+        joker.UseStaticFiles("./static")
+    
+        // 启动服务
+        fmt.Println("服务启动...")
+        joker.Run()
+    }</code>
+</pre>
+        </div>
+
+        <div class="cta">
+            <h2>立即开始使用JokerHttp</h2>
+            <p>体验Go语言带来的高效Web开发</p>
+            <a href="https://github.com/jeanhua/jokerhttp" class="btn">获取源代码</a>
+        </div>
+
+        <footer>
+            <p>© 2025 JokerHttp项目 | 用❤️构建的开源项目</p>
+        </footer>
+    </div>
+</body>
+
+</html>
