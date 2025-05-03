@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"os"
 	"strconv"
@@ -49,6 +50,7 @@ func (jokerEngine *JokerEngine) MapGet(pattern string, handle func(request *http
 			MiddlewareChains: make([]Middleware, middlewareCount+1),
 			index:            -1,
 			maxIndex:         middlewareCount + 1,
+			aborted:          false,
 		}
 		copy(ctx.MiddlewareChains, jokerEngine.middlewares)
 		finalHandler := func(ctx *Contex) {
@@ -89,6 +91,7 @@ func (jokerEngine *JokerEngine) MapPost(pattern string, handle func(request *htt
 			MiddlewareChains: make([]Middleware, middlewareCount+1),
 			index:            -1,
 			maxIndex:         middlewareCount + 1,
+			aborted:          false,
 		}
 		copy(ctx.MiddlewareChains, jokerEngine.middlewares)
 		finalHandler := func(ctx *Contex) {
@@ -143,4 +146,71 @@ func (jokerEngine *JokerEngine) MapPost(pattern string, handle func(request *htt
 
 func (jokerEngine *JokerEngine) Run() {
 	http.ListenAndServe(":"+strconv.Itoa(jokerEngine.port), nil)
+}
+
+func (jokerEngine *JokerEngine) MapRedirect(pattern string, target string) {
+	http.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
+		middlewareCount := len(jokerEngine.middlewares)
+		ctx := &Contex{
+			Request:          r,
+			ResponseWriter:   w,
+			MiddlewareChains: make([]Middleware, middlewareCount+1),
+			index:            -1,
+			maxIndex:         middlewareCount + 1,
+			aborted:          false,
+		}
+		copy(ctx.MiddlewareChains, jokerEngine.middlewares)
+		finalHandler := func(ctx *Contex) {
+			ctx.ResponseWriter.Header().Set("Location", target)
+			ctx.ResponseWriter.WriteHeader(http.StatusTemporaryRedirect)
+		}
+		ctx.MiddlewareChains[middlewareCount] = finalHandler
+		if len(ctx.MiddlewareChains) > 0 {
+			ctx.Next()
+		}
+	})
+}
+
+func newProxy(targetHost string) (*httputil.ReverseProxy, error) {
+	url, err := url.Parse(targetHost)
+	if err != nil {
+		return nil, err
+	}
+	proxy := httputil.NewSingleHostReverseProxy(url)
+	proxy.ModifyResponse = modifyResponse()
+	return proxy, nil
+}
+
+func modifyResponse() func(*http.Response) error {
+	return func(resp *http.Response) error {
+		resp.Header.Set("X-Proxy", "JokerHttp")
+		return nil
+	}
+}
+
+func (jokerEngine *JokerEngine) MapReverseProxy(pattern string, target string) {
+	http.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
+		middlewareCount := len(jokerEngine.middlewares)
+		ctx := &Contex{
+			Request:          r,
+			ResponseWriter:   w,
+			MiddlewareChains: make([]Middleware, middlewareCount+1),
+			index:            -1,
+			maxIndex:         middlewareCount + 1,
+			aborted:          false,
+		}
+		copy(ctx.MiddlewareChains, jokerEngine.middlewares)
+		finalHandler := func(ctx *Contex) {
+			proxy, err := newProxy(target)
+			if err != nil {
+				ctx.ResponseWriter.WriteHeader(500)
+				return
+			}
+			proxy.ServeHTTP(ctx.ResponseWriter, ctx.Request)
+		}
+		ctx.MiddlewareChains[middlewareCount] = finalHandler
+		if len(ctx.MiddlewareChains) > 0 {
+			ctx.Next()
+		}
+	})
 }

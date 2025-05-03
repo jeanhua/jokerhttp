@@ -1,3 +1,4 @@
+
 # 🃏 JokerHttp —— 轻量级 Go HTTP 框架
 
 ## 🔍 概述
@@ -7,6 +8,8 @@ JokerHttp 是一个轻量、简洁的 Go 语言 HTTP 框架，提供如下核心
 - 灵活的路由映射
 - 支持中间件机制
 - 静态文件服务
+- 请求重定向
+- 反向代理支持
 - 上下文管理（Context）
 
 适用于快速搭建 Web 服务或 API 接口。
@@ -16,8 +19,6 @@ JokerHttp 是一个轻量、简洁的 Go 语言 HTTP 框架，提供如下核心
 ## 🚀 快速开始
 
 ### 安装
-
-使用 `go get` 安装 JokerHttp：
 
 ```bash
 go get "github.com/jeanhua/jokerhttp"
@@ -34,11 +35,8 @@ import (
 )
 
 func main() {
-	// 创建引擎实例
 	engine := jokerhttp.NewEngine()
 	engine.Init()
-
-	// 设置端口（可选，默认为 9099）
 	engine.SetPort(8080)
 
 	// 添加路由
@@ -47,14 +45,6 @@ func main() {
 
 	// 启动服务
 	engine.Run()
-}
-
-func helloHandler(request *http.Request, params url.Values) (int, interface{}) {
-	return 200, map[string]string{"message": "Hello, World!"}
-}
-
-func echoHandler(request *http.Request, body []byte, params url.Values) (int, interface{}) {
-	return 200, map[string]string{"echo": string(body)}
 }
 ```
 
@@ -99,7 +89,27 @@ engine.MapPost("/path", func(r *http.Request, b []byte, p url.Values) (int, inte
 })
 ```
 
-### 5. 中间件支持
+### 5. 请求重定向
+
+```go
+engine.MapRedirect("/old-path", "https://example.com/new-path")
+```
+
+访问 `/old-path` 将返回状态码 `307 Temporary Redirect` 并跳转到目标地址。
+
+### 6. 反向代理
+
+```go
+engine.MapReverseProxy("/api", "https://backend.example.com")
+```
+
+所有对 `/api` 的请求将被代理到 `https://backend.example.com/api`，并在响应头中添加：
+
+```http
+X-Proxy: JokerHttp
+```
+
+### 7. 中间件支持
 
 #### 添加中间件
 
@@ -123,7 +133,7 @@ engine.Use(func(ctx *engine.Contex) {
 })
 ```
 
-### 6. Context 方法一览
+### 8. Context 方法一览
 
 | 方法 | 描述 |
 |------|------|
@@ -187,6 +197,12 @@ func main() {
 		}
 	})
 
+	// 重定向
+	joker.MapRedirect("/google", "https://www.google.com")
+
+	// 反向代理
+	joker.MapReverseProxy("/api", "https://api.example.com")
+
 	// 静态文件服务
 	joker.UseStaticFiles("./static")
 
@@ -195,8 +211,6 @@ func main() {
 	joker.Run()
 }
 ```
-
-> ✅ **提示**：如果不使用map，你可以返回任意结构体作为响应数据，框架会自动进行 JSON 序列化。
 
 ---
 
@@ -218,6 +232,31 @@ curl -X POST \
      http://localhost:8080/echo
 ```
 
+### 重定向测试
+
+```bash
+curl -v http://localhost:8080/google
+```
+
+应返回：
+
+```http
+HTTP/1.1 307 Temporary Redirect
+Location: https://www.google.com
+```
+
+### 反向代理测试
+
+```bash
+curl http://localhost:8080/api/users
+```
+
+等价于访问：
+
+```
+https://api.example.com/api/users
+```
+
 ---
 
 ## ⚠️ 注意事项
@@ -226,10 +265,8 @@ curl -X POST \
 2. **中间件顺序**很重要，按添加顺序依次执行。
 3. 使用 `Abort()` 或其变种方法可提前终止请求处理链。
 4. 静态文件服务默认映射到 `/` 路径。
+5. 重定向和反向代理也支持中间件链控制。
 
 ---
 
 如需进一步了解，请查看 [GitHub 项目地址](https://github.com/jeanhua/jokerhttp) 获取最新文档和更新。欢迎贡献代码或提出建议！
-
----
-
