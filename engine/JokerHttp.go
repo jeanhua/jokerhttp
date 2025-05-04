@@ -41,7 +41,7 @@ func (jokerEngine *JokerEngine) UseStaticFiles(baseRoot string) {
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 }
 
-func (jokerEngine *JokerEngine) MapGet(pattern string, handle func(request *http.Request, params url.Values) (status int, response interface{})) {
+func (jokerEngine *JokerEngine) Map(pattern string, handle func(request *http.Request, params url.Values) (status int, response interface{})) {
 	http.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
 		middlewareCount := len(jokerEngine.middlewares)
 		ctx := &Contex{
@@ -54,10 +54,47 @@ func (jokerEngine *JokerEngine) MapGet(pattern string, handle func(request *http
 		}
 		copy(ctx.MiddlewareChains, jokerEngine.middlewares)
 		finalHandler := func(ctx *Contex) {
-			if r.Method != http.MethodGet {
-				w.WriteHeader(405)
+			params := r.URL.Query()
+			status, response := handle(r, params)
+			if response == nil {
+				w.WriteHeader(status)
 				return
 			}
+			jsonresult, err := json.Marshal(response)
+			if err != nil {
+				log.Println("[Error]:Handle in " + pattern + " >>> " + err.Error())
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("Server", "JokerHttp")
+			w.WriteHeader(status)
+			w.Write(jsonresult)
+		}
+
+		ctx.MiddlewareChains[middlewareCount] = finalHandler
+		if len(ctx.MiddlewareChains) > 0 {
+			ctx.Next()
+		}
+	})
+}
+
+func (jokerEngine *JokerEngine) MapGet(pattern string, handle func(request *http.Request, params url.Values) (status int, response interface{})) {
+	http.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			w.WriteHeader(405)
+			return
+		}
+		middlewareCount := len(jokerEngine.middlewares)
+		ctx := &Contex{
+			Request:          r,
+			ResponseWriter:   w,
+			MiddlewareChains: make([]Middleware, middlewareCount+1),
+			index:            -1,
+			maxIndex:         middlewareCount + 1,
+			aborted:          false,
+		}
+		copy(ctx.MiddlewareChains, jokerEngine.middlewares)
+		finalHandler := func(ctx *Contex) {
 			params := r.URL.Query()
 			status, response := handle(r, params)
 			if response == nil {
@@ -84,6 +121,10 @@ func (jokerEngine *JokerEngine) MapGet(pattern string, handle func(request *http
 
 func (jokerEngine *JokerEngine) MapPost(pattern string, handle func(request *http.Request, body []byte, params url.Values) (status int, response interface{})) {
 	http.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			w.WriteHeader(405)
+			return
+		}
 		middlewareCount := len(jokerEngine.middlewares)
 		ctx := &Contex{
 			Request:          r,
@@ -95,10 +136,6 @@ func (jokerEngine *JokerEngine) MapPost(pattern string, handle func(request *htt
 		}
 		copy(ctx.MiddlewareChains, jokerEngine.middlewares)
 		finalHandler := func(ctx *Contex) {
-			if r.Method != http.MethodPost {
-				w.WriteHeader(405)
-				return
-			}
 			var body []byte
 			var err error
 
