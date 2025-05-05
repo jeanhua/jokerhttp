@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"log"
 	"sync"
 	"time"
 )
@@ -19,6 +20,7 @@ type cacheItem struct {
 func (c *Cache) init() {
 	c.cacheMap = make(map[string]*cacheItem)
 	c.checkTime_second = 30
+	log.Println("[info] Cache initialized")
 	go c.checkCache()
 }
 
@@ -72,7 +74,11 @@ func (c *Cache) TryGet(key string) (interface{}, bool) {
 		return nil, false
 	}
 	c.mu.RUnlock()
-	return value.Value, ok
+	if ok {
+		return value.Value, true
+	} else {
+		return nil, false
+	}
 }
 
 func (c *Cache) Remove(key string) {
@@ -91,15 +97,4 @@ func (c *Cache) Clear() {
 
 func (c *Cache) AbsoluteTimeFromNow(duration time.Duration) int64 {
 	return time.Now().Add(duration).Unix()
-}
-
-// 全局缓存
-var jokerCache *Cache
-
-func (c *JokerEngine) Cache() *Cache {
-	if jokerCache == nil {
-		jokerCache = &Cache{}
-		jokerCache.init()
-	}
-	return jokerCache
 }
