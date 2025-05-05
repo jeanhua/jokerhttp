@@ -32,13 +32,13 @@ func (jokerEngine *JokerEngine) Use(middleware Middleware) {
 	jokerEngine.middlewares = append(jokerEngine.middlewares, middleware)
 }
 
-func (jokerEngine *JokerEngine) UseStaticFiles(baseRoot string) {
+func (jokerEngine *JokerEngine) UseStaticFiles(baseRoot string, target string) {
 	baseRoot = strings.ReplaceAll(baseRoot, "\\", "/")
 	fs := http.FileServer(http.Dir(baseRoot))
 	if _, err := os.Stat(baseRoot); err != nil && os.IsNotExist(err) {
 		log.Printf("Directory does not exist: %s\n", baseRoot)
 	}
-	http.Handle("/static/", http.StripPrefix("/static/", fs))
+	http.Handle(target, http.StripPrefix(target, fs))
 }
 
 func (jokerEngine *JokerEngine) Map(pattern string, handle func(request *http.Request, params url.Values) (status int, response interface{})) {

@@ -45,9 +45,9 @@ func main() {
 	})
 
 	// 静态文件服务
-	joker.UseStaticFiles("./static")
+	joker.UseStaticFiles("./static", "/")
 
 	// 启动服务
-	fmt.Println("服务启动...")
+	fmt.Println("http://localhost:1314 -> 服务启动...")
 	joker.Run()
 }

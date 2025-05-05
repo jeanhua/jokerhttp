@@ -204,7 +204,7 @@ func main() {
 	joker.MapReverseProxy("/api", "https://api.example.com")
 
 	// 静态文件服务
-	joker.UseStaticFiles("./static")
+	joker.UseStaticFiles("./static", "/")
 
 	// 启动服务
 	fmt.Println("服务启动...")
