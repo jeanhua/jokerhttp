@@ -5,9 +5,9 @@ import (
 	"net/http"
 )
 
-type Middleware func(ctx *Contex)
+type Middleware func(ctx *JokerContex)
 
-type Contex struct {
+type JokerContex struct {
 	Request          *http.Request
 	ResponseWriter   http.ResponseWriter
 	MiddlewareChains []Middleware
@@ -16,23 +16,23 @@ type Contex struct {
 	aborted          bool
 }
 
-func (ctx *Contex) Next() {
+func (ctx *JokerContex) Next() {
 	if ctx.index < ctx.maxIndex && !ctx.aborted {
 		ctx.index++
 		ctx.MiddlewareChains[ctx.index](ctx)
 	}
 }
 
-func (ctx *Contex) Abort() {
+func (ctx *JokerContex) Abort() {
 	ctx.aborted = true
 }
 
-func (ctx *Contex) AbortWithStatus(statusCode int) {
+func (ctx *JokerContex) AbortWithStatus(statusCode int) {
 	ctx.ResponseWriter.WriteHeader(statusCode)
 	ctx.Abort()
 }
 
-func (ctx *Contex) AbortWithStatusJSON(statusCode int, jsonObj interface{}) {
+func (ctx *JokerContex) AbortWithStatusJSON(statusCode int, jsonObj interface{}) {
 	jsonResult, err := json.Marshal(jsonObj)
 	if err != nil {
 		ctx.ResponseWriter.WriteHeader(http.StatusInternalServerError)
@@ -46,7 +46,7 @@ func (ctx *Contex) AbortWithStatusJSON(statusCode int, jsonObj interface{}) {
 	ctx.Abort()
 }
 
-func (ctx *Contex) Use(middleware Middleware) {
+func (ctx *JokerContex) Use(middleware Middleware) {
 	ctx.MiddlewareChains = append(ctx.MiddlewareChains, middleware)
 	ctx.maxIndex = len(ctx.MiddlewareChains)
 }

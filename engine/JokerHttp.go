@@ -15,6 +15,7 @@ import (
 type JokerEngine struct {
 	port        int
 	middlewares []Middleware
+	Cache       *Cache
 }
 
 func (jokerEngine *JokerEngine) Init() {
@@ -22,6 +23,9 @@ func (jokerEngine *JokerEngine) Init() {
 	if jokerEngine.port == 0 {
 		jokerEngine.port = 9099
 	}
+	// Initialize the cache
+	jokerEngine.Cache = &Cache{}
+	jokerEngine.Cache.init()
 }
 
 func (jokerEngine *JokerEngine) SetPort(port int) {
@@ -44,7 +48,7 @@ func (jokerEngine *JokerEngine) UseStaticFiles(baseRoot string, target string) {
 func (jokerEngine *JokerEngine) Map(pattern string, handle func(request *http.Request, params url.Values) (status int, response interface{})) {
 	http.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
 		middlewareCount := len(jokerEngine.middlewares)
-		ctx := &Contex{
+		ctx := &JokerContex{
 			Request:          r,
 			ResponseWriter:   w,
 			MiddlewareChains: make([]Middleware, middlewareCount+1),
@@ -53,7 +57,7 @@ func (jokerEngine *JokerEngine) Map(pattern string, handle func(request *http.Re
 			aborted:          false,
 		}
 		copy(ctx.MiddlewareChains, jokerEngine.middlewares)
-		finalHandler := func(ctx *Contex) {
+		finalHandler := func(ctx *JokerContex) {
 			params := r.URL.Query()
 			status, response := handle(r, params)
 			if response == nil {
@@ -85,16 +89,16 @@ func (jokerEngine *JokerEngine) MapGet(pattern string, handle func(request *http
 			return
 		}
 		middlewareCount := len(jokerEngine.middlewares)
-		ctx := &Contex{
+		ctx := &JokerContex{
 			Request:          r,
 			ResponseWriter:   w,
 			MiddlewareChains: make([]Middleware, middlewareCount+1),
-			index:            -1,
+			index:            0,
 			maxIndex:         middlewareCount + 1,
 			aborted:          false,
 		}
 		copy(ctx.MiddlewareChains, jokerEngine.middlewares)
-		finalHandler := func(ctx *Contex) {
+		finalHandler := func(ctx *JokerContex) {
 			params := r.URL.Query()
 			status, response := handle(r, params)
 			if response == nil {
@@ -126,16 +130,16 @@ func (jokerEngine *JokerEngine) MapPost(pattern string, handle func(request *htt
 			return
 		}
 		middlewareCount := len(jokerEngine.middlewares)
-		ctx := &Contex{
+		ctx := &JokerContex{
 			Request:          r,
 			ResponseWriter:   w,
 			MiddlewareChains: make([]Middleware, middlewareCount+1),
-			index:            -1,
+			index:            0,
 			maxIndex:         middlewareCount + 1,
 			aborted:          false,
 		}
 		copy(ctx.MiddlewareChains, jokerEngine.middlewares)
-		finalHandler := func(ctx *Contex) {
+		finalHandler := func(ctx *JokerContex) {
 			var body []byte
 			var err error
 
@@ -188,16 +192,16 @@ func (jokerEngine *JokerEngine) Run() {
 func (jokerEngine *JokerEngine) MapRedirect(pattern string, target string) {
 	http.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
 		middlewareCount := len(jokerEngine.middlewares)
-		ctx := &Contex{
+		ctx := &JokerContex{
 			Request:          r,
 			ResponseWriter:   w,
 			MiddlewareChains: make([]Middleware, middlewareCount+1),
-			index:            -1,
+			index:            0,
 			maxIndex:         middlewareCount + 1,
 			aborted:          false,
 		}
 		copy(ctx.MiddlewareChains, jokerEngine.middlewares)
-		finalHandler := func(ctx *Contex) {
+		finalHandler := func(ctx *JokerContex) {
 			ctx.ResponseWriter.Header().Set("Location", target)
 			ctx.ResponseWriter.WriteHeader(http.StatusTemporaryRedirect)
 		}
@@ -228,7 +232,7 @@ func modifyResponse() func(*http.Response) error {
 func (jokerEngine *JokerEngine) MapReverseProxy(pattern string, target string) {
 	http.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
 		middlewareCount := len(jokerEngine.middlewares)
-		ctx := &Contex{
+		ctx := &JokerContex{
 			Request:          r,
 			ResponseWriter:   w,
 			MiddlewareChains: make([]Middleware, middlewareCount+1),
@@ -237,7 +241,7 @@ func (jokerEngine *JokerEngine) MapReverseProxy(pattern string, target string) {
 			aborted:          false,
 		}
 		copy(ctx.MiddlewareChains, jokerEngine.middlewares)
-		finalHandler := func(ctx *Contex) {
+		finalHandler := func(ctx *JokerContex) {
 			proxy, err := newProxy(target)
 			if err != nil {
 				ctx.ResponseWriter.WriteHeader(500)
