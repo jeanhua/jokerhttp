@@ -86,10 +86,6 @@ func (jokerEngine *JokerEngine) Map(pattern string, handle func(request *http.Re
 
 func (jokerEngine *JokerEngine) MapGet(pattern string, handle func(request *http.Request, params url.Values, setHeaders func(key, value string)) (status int, response interface{})) {
 	http.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet {
-			w.WriteHeader(405)
-			return
-		}
 		middlewareCount := len(jokerEngine.middlewares)
 		ctx := &JokerContex{
 			Request:          r,
@@ -101,6 +97,10 @@ func (jokerEngine *JokerEngine) MapGet(pattern string, handle func(request *http
 		}
 		copy(ctx.MiddlewareChains, jokerEngine.middlewares)
 		finalHandler := func(ctx *JokerContex) {
+			if r.Method != http.MethodGet {
+				w.WriteHeader(405)
+				return
+			}
 			params := r.URL.Query()
 			status, response := handle(r, params, func(key, value string) {
 				w.Header().Set(key, value)
@@ -129,10 +129,6 @@ func (jokerEngine *JokerEngine) MapGet(pattern string, handle func(request *http
 
 func (jokerEngine *JokerEngine) MapPost(pattern string, handle func(request *http.Request, body []byte, params url.Values, setHeaders func(key, value string)) (status int, response interface{})) {
 	http.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			w.WriteHeader(405)
-			return
-		}
 		middlewareCount := len(jokerEngine.middlewares)
 		ctx := &JokerContex{
 			Request:          r,
@@ -144,6 +140,10 @@ func (jokerEngine *JokerEngine) MapPost(pattern string, handle func(request *htt
 		}
 		copy(ctx.MiddlewareChains, jokerEngine.middlewares)
 		finalHandler := func(ctx *JokerContex) {
+			if r.Method != http.MethodPost {
+				w.WriteHeader(405)
+				return
+			}
 			var body []byte
 			var err error
 
