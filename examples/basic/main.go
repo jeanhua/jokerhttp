@@ -24,16 +24,17 @@ func main() {
 	})
 
 	// 添加认证中间件
-	joker.Use(func(ctx *engine.JokerContex) {
-		if ctx.Request.Header.Get("Authorization") != "secret" {
-			ctx.AbortWithStatusJSON(401, map[string]string{"error": "Unauthorized"})
-			ctx.Abort()
-		}
-		ctx.Next()
-	})
+	// joker.Use(func(ctx *engine.JokerContex) {
+	// 	if ctx.Request.Header.Get("Authorization") != "secret" {
+	// 		ctx.AbortWithStatusJSON(401, map[string]string{"error": "Unauthorized"})
+	// 		ctx.Abort()
+	// 	}
+	// 	ctx.Next()
+	// })
 
 	// 添加路由
-	joker.MapGet("/hello", func(r *http.Request, p url.Values) (int, interface{}) {
+	joker.MapGet("/hello", func(r *http.Request, p url.Values, setHeaders func(key, value string)) (int, interface{}) {
+		setHeaders("say", "hello")
 		name := p.Get("name")
 		if name == "" {
 			name = "World"
@@ -41,11 +42,11 @@ func main() {
 		return 200, map[string]string{"message": "Hello, " + name + "!"}
 	})
 
-	joker.MapPost("/echo", func(r *http.Request, b []byte, p url.Values) (int, interface{}) {
+	joker.MapPost("/echo", func(r *http.Request, b []byte, p url.Values, setHeaders func(key, value string)) (int, interface{}) {
 		return 200, map[string]string{"original": string(b)}
 	})
 
-	joker.MapGet("/cache", func(request *http.Request, params url.Values) (status int, response interface{}) {
+	joker.MapGet("/cache", func(request *http.Request, params url.Values, setHeaders func(key, value string)) (status int, response interface{}) {
 		// 获取缓存值
 		value, found := joker.Cache.TryGet("myKey")
 		if found {

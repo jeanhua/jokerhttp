@@ -45,7 +45,7 @@ func (jokerEngine *JokerEngine) UseStaticFiles(baseRoot string, target string) {
 	http.Handle(target, http.StripPrefix(target, fs))
 }
 
-func (jokerEngine *JokerEngine) Map(pattern string, handle func(request *http.Request, params url.Values) (status int, response interface{})) {
+func (jokerEngine *JokerEngine) Map(pattern string, handle func(request *http.Request, params url.Values, setHeaders func(key, value string)) (status int, response interface{})) {
 	http.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
 		middlewareCount := len(jokerEngine.middlewares)
 		ctx := &JokerContex{
@@ -59,7 +59,9 @@ func (jokerEngine *JokerEngine) Map(pattern string, handle func(request *http.Re
 		copy(ctx.MiddlewareChains, jokerEngine.middlewares)
 		finalHandler := func(ctx *JokerContex) {
 			params := r.URL.Query()
-			status, response := handle(r, params)
+			status, response := handle(r, params, func(key, value string) {
+				w.Header().Set(key, value)
+			})
 			if response == nil {
 				w.WriteHeader(status)
 				return
@@ -82,7 +84,7 @@ func (jokerEngine *JokerEngine) Map(pattern string, handle func(request *http.Re
 	})
 }
 
-func (jokerEngine *JokerEngine) MapGet(pattern string, handle func(request *http.Request, params url.Values) (status int, response interface{})) {
+func (jokerEngine *JokerEngine) MapGet(pattern string, handle func(request *http.Request, params url.Values, setHeaders func(key, value string)) (status int, response interface{})) {
 	http.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			w.WriteHeader(405)
@@ -100,7 +102,9 @@ func (jokerEngine *JokerEngine) MapGet(pattern string, handle func(request *http
 		copy(ctx.MiddlewareChains, jokerEngine.middlewares)
 		finalHandler := func(ctx *JokerContex) {
 			params := r.URL.Query()
-			status, response := handle(r, params)
+			status, response := handle(r, params, func(key, value string) {
+				w.Header().Set(key, value)
+			})
 			if response == nil {
 				w.WriteHeader(status)
 				return
@@ -123,7 +127,7 @@ func (jokerEngine *JokerEngine) MapGet(pattern string, handle func(request *http
 	})
 }
 
-func (jokerEngine *JokerEngine) MapPost(pattern string, handle func(request *http.Request, body []byte, params url.Values) (status int, response interface{})) {
+func (jokerEngine *JokerEngine) MapPost(pattern string, handle func(request *http.Request, body []byte, params url.Values, setHeaders func(key, value string)) (status int, response interface{})) {
 	http.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			w.WriteHeader(405)
@@ -160,7 +164,9 @@ func (jokerEngine *JokerEngine) MapPost(pattern string, handle func(request *htt
 				}
 			}
 			params := r.URL.Query()
-			status, response := handle(r, body, params)
+			status, response := handle(r, body, params, func(key, value string) {
+				w.Header().Set(key, value)
+			})
 			if response == nil {
 				w.WriteHeader(status)
 				return

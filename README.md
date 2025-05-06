@@ -1,113 +1,117 @@
-# 🃏 JokerHTTP - 轻量级 Go Web 框架
+# JokerHTTP 🃏 - 轻量级 Go HTTP 引擎
 
-![Go](https://img.shields.io/badge/Go-1.18%2B-blue)
-![license](https://img.shields.io/badge/License-MIT-green)
+![Go 版本](https://img.shields.io/badge/Go-1.16+-blue.svg)
+[![许可证](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
 <p aligen="center">中文简体 | <a href="README_en.md">English</a></p>
 
-JokerHTTP 是一个轻量灵活的 Go Web 框架，旨在让 Web 开发变得简单愉快。🚀
+JokerHTTP 是一个轻量级、灵活的 Go HTTP 引擎，让 Web 开发变得简单有趣！🎉
 
-## ✨ 特性
+## 功能特性 ✨
 
-- 🛠️ **中间件支持**：轻松为路由添加中间件
-- ⚡ **内置缓存**：简单的内存缓存系统
-- 📂 **静态文件**：便捷地提供静态文件服务
-- 🔄 **反向代理**：内置反向代理功能
-- 🔍 **路由处理**：简单的 GET/POST 路由映射
-- ⏱️ **自动缓存清理**：后台 goroutine 清理过期项
-- 🔗 **URL 重定向**：轻松实现路由重定向
+- 🚀 支持中间件的简易路由
+- 🔥 内置缓存系统
+- 📦 静态文件服务
+- 🔄 反向代理功能
+- ⏱️ 自动缓存过期
+- 🛡️ 类型安全处理器
+- 🧩 可扩展的中间件架构
 
-## 🚀 快速开始
-
-### 安装
+## 安装 📦
 
 ```bash
 go get github.com/jeanhua/jokerhttp
 ```
 
-### 基础用法
+## 快速开始 🚀
 
 ```go
 package main
 
 import (
-	"github.com/jeanhua/jokerhttp/engine"
+	"github.com/jeanhua/jokerhttp"
+	"net/http"
 )
 
 func main() {
-	// 创建新引擎
-	app := engine.NewEngine()
-	
-	// 使用默认设置初始化
-	app.Init()
-	
-	// 设置自定义端口（默认：9099）
-	app.SetPort(8080)
-	
-	// 添加简单 GET 路由
-	app.MapGet("/hello", func(req *http.Request, params url.Values) (int, interface{}) {
-		return 200, map[string]string{"message": "你好，JokerHTTP! 👋"}
+	// 创建新的 JokerHTTP 引擎
+	engine := jokerhttp.NewEngine()
+	engine.Init()
+	engine.SetPort(8080)
+
+	// 添加简单的 GET 路由
+	engine.MapGet("/hello", func(r *http.Request, params url.Values, setHeaders func(key, value string)) (int, interface{}) {
+		return http.StatusOK, map[string]string{"message": "Hello, JokerHTTP! 🎭"}
 	})
-	
+
+	// 提供静态文件服务
+	engine.UseStaticFiles("./public", "/static")
+
 	// 启动服务器
-	app.Run()
+	engine.Run()
 }
 ```
 
-## 📚 文档
+## API 参考 📚
 
-### 🛠️ 中间件
+### 引擎方法
+
+- `Init()` - 使用默认设置初始化引擎
+- `SetPort(port int)` - 设置服务器端口
+- `Use(middleware Middleware)` - 添加中间件到链中
+- `Run()` - 启动服务器
+
+### 路由方法
+
+- `Map(pattern string, handler)` - 通用路由处理器
+- `MapGet(pattern string, handler)` - GET 路由处理器
+- `MapPost(pattern string, handler)` - POST 路由处理器
+- `MapRedirect(pattern string, target string)` - 重定向路由
+- `MapReverseProxy(pattern string, target string)` - 反向代理路由
+
+### 缓存方法
+
+- `Set(key string, value interface{}, expiresAt int64)` - 设置缓存值
+- `TryGet(key string)` - 获取缓存值
+- `Remove(key string)` - 移除缓存项
+- `Clear()` - 清除所有缓存
+- `AbsoluteTimeFromNow(duration time.Duration)` - 过期时间辅助方法
+
+## 中间件示例 🧩
 
 ```go
-// 自定义中间件
 func LoggerMiddleware(ctx *engine.JokerContex) {
-	log.Println("收到请求:", ctx.Request.URL.Path)
-	ctx.Next()
+    start := time.Now()
+    ctx.Next()
+    duration := time.Since(start)
+    log.Printf("%s %s - %v", ctx.Request.Method, ctx.Request.URL.Path, duration)
 }
 
-// 注册中间件
-app.Use(LoggerMiddleware)
+// 使用方式:
+engine.Use(LoggerMiddleware)
 ```
 
-### 💾 缓存使用
+## 缓存示例 💾
 
 ```go
-// 设置缓存
-expireTime := app.Cache.AbsoluteTimeFromNow(5 * time.Minute)
-app.Cache.Set("my_key", "my_value", expireTime)
+// 设置5分钟后过期的缓存
+expiration := engine.Cache.AbsoluteTimeFromNow(5 * time.Minute)
+engine.Cache.Set("user:123", userData, expiration)
 
-// 获取缓存
-if value, ok := app.Cache.TryGet("my_key"); ok {
-    fmt.Println("缓存值:", value)
+// 从缓存获取
+if value, ok := engine.Cache.TryGet("user:123"); ok {
+    // 使用缓存值
 }
 ```
 
-### 📂 静态文件
-
-```go
-// 从 ./public 目录提供静态文件服务，映射到 /static 路径
-app.UseStaticFiles("./public", "/static")
-```
-
-### 🔄 反向代理
-
-```go
-// 将所有 /api 请求代理到另一台服务器
-app.MapReverseProxy("/api", "http://api.example.com")
-```
-
-### 完整示例：
-
-[examples/basic/main.go](examples/basic/main.go)
-
-## 🤝 贡献指南
+## 贡献指南 🤝
 
 欢迎贡献！请提交 issue 或 pull request。
 
-## 📜 许可证
+## 许可证 📜
 
-MIT 许可证 - 详见 LICENSE 文件。
+MIT 许可证 - 详见 [LICENSE](./LICENSE) 文件。
 
-------
+---
 
-©Since 2025 jeanhua
+©jeanhua 始于 2025

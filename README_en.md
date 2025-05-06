@@ -1,107 +1,115 @@
-# 🃏 JokerHTTP - A Lightweight Go Web Framework
+# JokerHTTP 🃏 - A Lightweight Go HTTP Engine
 
-![Go](https://img.shields.io/badge/Go-1.18%2B-blue)
-![license](https://img.shields.io/badge/License-MIT-green)
+![Go Version](https://img.shields.io/badge/Go-1.16+-blue.svg)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
-JokerHTTP is a lightweight and flexible web framework for Go, designed to make web development simple and enjoyable. 🚀
+JokerHTTP is a lightweight and flexible HTTP engine for Go that makes web development simple and fun! 🎉
 
-## ✨ Features
+## Features ✨
 
-- 🛠️ **Middleware Support**: Easily add middleware to your routes
-- ⚡ **Built-in Cache**: Simple in-memory caching system
-- 📂 **Static Files**: Serve static files with ease
-- 🔄 **Reverse Proxy**: Built-in reverse proxy capabilities
-- 🔍 **Route Handling**: Simple GET/POST route mapping
-- ⏱️ **Automatic Cache Cleanup**: Background goroutine cleans expired items
-- 🔗 **URL Redirection**: Easy route redirection
+- 🚀 Easy routing with middleware support
+- 🔥 Built-in caching system
+- 📦 Static file serving
+- 🔄 Reverse proxy capabilities
+- ⏱️ Automatic cache expiration
+- 🛡️ Type-safe handlers
+- 🧩 Extensible middleware architecture
 
-## 🚀 Quick Start
-
-### Installation
+## Installation 📦
 
 ```bash
 go get github.com/jeanhua/jokerhttp
 ```
 
-### Basic Usage
+## Quick Start 🚀
 
 ```go
 package main
 
 import (
-	"github.com/jeanhua/jokerhttp/engine"
+	"github.com/jeanhua/jokerhttp"
+	"net/http"
 )
 
 func main() {
-	// Create new engine
-	app := engine.NewEngine()
-	
-	// Initialize with default settings
-	app.Init()
-	
-	// Set custom port (default: 9099)
-	app.SetPort(8080)
-	
+	// Create a new JokerHTTP engine
+	engine := jokerhttp.NewEngine()
+	engine.Init()
+	engine.SetPort(8080)
+
 	// Add a simple GET route
-	app.MapGet("/hello", func(req *http.Request, params url.Values) (int, interface{}) {
-		return 200, map[string]string{"message": "Hello, JokerHTTP! 👋"}
+	engine.MapGet("/hello", func(r *http.Request, params url.Values, setHeaders func(key, value string)) (int, interface{}) {
+		return http.StatusOK, map[string]string{"message": "Hello, JokerHTTP! 🎭"}
 	})
-	
+
+	// Serve static files
+	engine.UseStaticFiles("./public", "/static")
+
 	// Start the server
-	app.Run()
+	engine.Run()
 }
 ```
 
-## 📚 Documentation
+## API Reference 📚
 
-### 🛠️ Middleware
+### Engine Methods
+
+- `Init()` - Initialize the engine with default settings
+- `SetPort(port int)` - Set the server port
+- `Use(middleware Middleware)` - Add middleware to the chain
+- `Run()` - Start the server
+
+### Routing Methods
+
+- `Map(pattern string, handler)` - Generic route handler
+- `MapGet(pattern string, handler)` - GET route handler
+- `MapPost(pattern string, handler)` - POST route handler
+- `MapRedirect(pattern string, target string)` - Redirect route
+- `MapReverseProxy(pattern string, target string)` - Reverse proxy route
+
+### Cache Methods
+
+- `Set(key string, value interface{}, expiresAt int64)` - Set cache value
+- `TryGet(key string)` - Get cache value
+- `Remove(key string)` - Remove cache item
+- `Clear()` - Clear all cache
+- `AbsoluteTimeFromNow(duration time.Duration)` - Helper for expiration time
+
+## Middleware Example 🧩
 
 ```go
-// Custom middleware
 func LoggerMiddleware(ctx *engine.JokerContex) {
-	log.Println("Request received:", ctx.Request.URL.Path)
-	ctx.Next()
+    start := time.Now()
+    ctx.Next()
+    duration := time.Since(start)
+    log.Printf("%s %s - %v", ctx.Request.Method, ctx.Request.URL.Path, duration)
 }
 
-// Register middleware
-app.Use(LoggerMiddleware)
+// Usage:
+engine.Use(LoggerMiddleware)
 ```
 
-### 💾 Cache Usage
+## Cache Example 💾
 
 ```go
-// Set cache
-expireTime := app.Cache.AbsoluteTimeFromNow(5 * time.Minute)
-app.Cache.Set("my_key", "my_value", expireTime)
+// Set cache that expires in 5 minutes
+expiration := engine.Cache.AbsoluteTimeFromNow(5 * time.Minute)
+engine.Cache.Set("user:123", userData, expiration)
 
-// Get cache
-if value, ok := app.Cache.TryGet("my_key"); ok {
-    fmt.Println("Cached value:", value)
+// Get from cache
+if value, ok := engine.Cache.TryGet("user:123"); ok {
+    // Use cached value
 }
 ```
 
-### 📂 Static Files
-
-```go
-// Serve static files from ./public at /static
-app.UseStaticFiles("./public", "/static")
-```
-
-### 🔄 Reverse Proxy
-
-```go
-// Proxy all requests from /api to another server
-app.MapReverseProxy("/api", "http://api.example.com")
-```
-
-## 🤝 Contributing
+## Contributing 🤝
 
 Contributions are welcome! Please open an issue or submit a pull request.
 
-## 📜 License
+## License 📜
 
-MIT License - see LICENSE for details.
+MIT License - See [LICENSE](./LICENSE) for details.
 
-------
+---
 
-©Since 2025 jeanhua
+©jeanhua since 2025
