@@ -15,7 +15,7 @@ import (
 type JokerEngine struct {
 	port        int
 	middlewares []Middleware
-	Cache       *Cache
+	Cache       *jokerCache
 }
 
 func (jokerEngine *JokerEngine) Init() {
@@ -24,7 +24,7 @@ func (jokerEngine *JokerEngine) Init() {
 		jokerEngine.port = 9099
 	}
 	// Initialize the cache
-	jokerEngine.Cache = &Cache{}
+	jokerEngine.Cache = &jokerCache{}
 	jokerEngine.Cache.init()
 }
 

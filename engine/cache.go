@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-type Cache struct {
+type jokerCache struct {
 	cacheMap         map[string]*cacheItem
 	checkTime_second int64
 	mu               sync.RWMutex
@@ -17,14 +17,14 @@ type cacheItem struct {
 	Value     interface{}
 }
 
-func (c *Cache) init() {
+func (c *jokerCache) init() {
 	c.cacheMap = make(map[string]*cacheItem)
 	c.checkTime_second = 30
 	log.Println("[info] Cache initialized")
 	go c.checkCache()
 }
 
-func (c *Cache) checkCache() {
+func (c *jokerCache) checkCache() {
 	ticker := time.NewTicker(time.Duration(c.checkTime_second) * time.Second)
 	defer ticker.Stop()
 	for range ticker.C {
@@ -47,7 +47,7 @@ func (c *Cache) checkCache() {
 	}
 }
 
-func (c *Cache) Set(key string, value interface{}, expiresAt int64) {
+func (c *jokerCache) Set(key string, value interface{}, expiresAt int64) {
 	if expiresAt <= 0 {
 		return
 	}
@@ -59,7 +59,7 @@ func (c *Cache) Set(key string, value interface{}, expiresAt int64) {
 	}
 }
 
-func (c *Cache) TryGet(key string) (interface{}, bool) {
+func (c *jokerCache) TryGet(key string) (interface{}, bool) {
 	c.mu.RLock()
 	value, ok := c.cacheMap[key]
 	if ok && value.expiresAt < time.Now().Unix() {
@@ -81,13 +81,13 @@ func (c *Cache) TryGet(key string) (interface{}, bool) {
 	}
 }
 
-func (c *Cache) Remove(key string) {
+func (c *jokerCache) Remove(key string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	delete(c.cacheMap, key)
 }
 
-func (c *Cache) Clear() {
+func (c *jokerCache) Clear() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	for key := range c.cacheMap {
@@ -95,6 +95,6 @@ func (c *Cache) Clear() {
 	}
 }
 
-func (c *Cache) AbsoluteTimeFromNow(duration time.Duration) int64 {
+func (c *jokerCache) AbsoluteTimeFromNow(duration time.Duration) int64 {
 	return time.Now().Add(duration).Unix()
 }
