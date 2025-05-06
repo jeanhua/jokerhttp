@@ -21,11 +21,11 @@ func TestServer(t *testing.T) {
 	server.Run()
 }
 
-func backint(request *http.Request, params url.Values) (status int, response interface{}) {
+func backint(request *http.Request, params url.Values, setHeader func(key, value string)) (status int, response interface{}) {
 	return 200, 114514
 }
 
-func backjson(request *http.Request, params url.Values) (status int, response interface{}) {
+func backjson(request *http.Request, params url.Values, setHeader func(key, value string)) (status int, response interface{}) {
 	return 200, struct {
 		Message string
 	}{
@@ -33,6 +33,6 @@ func backjson(request *http.Request, params url.Values) (status int, response in
 	}
 }
 
-func backString(request *http.Request, params url.Values) (status int, response interface{}) {
+func backString(request *http.Request, params url.Values, setHeader func(key, value string)) (status int, response interface{}) {
 	return 200, "success"
 }
