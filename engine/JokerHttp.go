@@ -91,7 +91,7 @@ func (jokerEngine *JokerEngine) MapGet(pattern string, handle func(request *http
 			Request:          r,
 			ResponseWriter:   w,
 			MiddlewareChains: make([]Middleware, middlewareCount+1),
-			index:            0,
+			index:            -1,
 			maxIndex:         middlewareCount + 1,
 			aborted:          false,
 		}
@@ -134,7 +134,7 @@ func (jokerEngine *JokerEngine) MapPost(pattern string, handle func(request *htt
 			Request:          r,
 			ResponseWriter:   w,
 			MiddlewareChains: make([]Middleware, middlewareCount+1),
-			index:            0,
+			index:            -1,
 			maxIndex:         middlewareCount + 1,
 			aborted:          false,
 		}
@@ -202,7 +202,7 @@ func (jokerEngine *JokerEngine) MapRedirect(pattern string, target string) {
 			Request:          r,
 			ResponseWriter:   w,
 			MiddlewareChains: make([]Middleware, middlewareCount+1),
-			index:            0,
+			index:            -1,
 			maxIndex:         middlewareCount + 1,
 			aborted:          false,
 		}
