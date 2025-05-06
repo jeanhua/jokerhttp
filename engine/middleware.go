@@ -17,7 +17,7 @@ type JokerContex struct {
 }
 
 func (ctx *JokerContex) Next() {
-	if ctx.index < ctx.maxIndex && !ctx.aborted {
+	if ctx.index < ctx.maxIndex-1 && !ctx.aborted {
 		ctx.index++
 		ctx.MiddlewareChains[ctx.index](ctx)
 	}
