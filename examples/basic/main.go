@@ -24,13 +24,13 @@ func main() {
 	})
 
 	// 添加认证中间件
-	// joker.Use(func(ctx *engine.JokerContex) {
-	// 	if ctx.Request.Header.Get("Authorization") != "secret" {
-	// 		ctx.AbortWithStatusJSON(401, map[string]string{"error": "Unauthorized"})
-	// 		ctx.Abort()
-	// 	}
-	// 	ctx.Next()
-	// })
+	joker.Use(func(ctx *engine.JokerContex) {
+		if ctx.Request.Header.Get("Authorization") != "secret" {
+			ctx.AbortWithStatusJSON(401, map[string]string{"error": "Unauthorized"})
+			ctx.Abort()
+		}
+		ctx.Next()
+	})
 
 	// 添加路由
 	joker.MapGet("/hello", func(r *http.Request, p url.Values, setHeaders func(key, value string)) (int, interface{}) {
