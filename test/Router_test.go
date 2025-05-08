@@ -36,3 +36,23 @@ func TestRouter(t *testing.T) {
 	})
 	joker.Run()
 }
+
+func TestRouterReirect(t *testing.T) {
+	joker := engine.NewEngine()
+	joker.Init()
+	joker.SetPort(1314)
+	router := joker.NewRouter()
+	root := router.Group("/api")
+	root.MapRedirect("/redirect", "https://www.baidu.com")
+	joker.Run()
+}
+
+func TestRouterProxy(t *testing.T) {
+	joker := engine.NewEngine()
+	joker.Init()
+	joker.SetPort(1314)
+	router := joker.NewRouter()
+	root := router.Group("/api")
+	root.MapReverseProxy("/", "https://imarket.jeanhua.cn/")
+	joker.Run()
+}

@@ -45,7 +45,18 @@ func (jokerEngine *JokerEngine) UseStaticFiles(baseRoot string, target string) {
 	if _, err := os.Stat(baseRoot); err != nil && os.IsNotExist(err) {
 		log.Printf("Directory does not exist: %s\n", baseRoot)
 	}
-	http.Handle(target, http.StripPrefix(target, fs))
+	// Handle the static file server
+	http.HandleFunc(target, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Server", "JokerHttp")
+		w.Header().Set("X-Static-File", "JokerHttp")
+		w.Header().Set("Cache-Control", "cache, max-age=3600")
+		if strings.HasPrefix(r.URL.Path, target) {
+			r.URL.Path = strings.TrimPrefix(r.URL.Path, target)
+			fs.ServeHTTP(w, r)
+		} else {
+			http.NotFound(w, r)
+		}
+	})
 }
 
 func (jokerEngine *JokerEngine) Map(pattern string, handle func(request *http.Request, params url.Values, setHeaders func(key, value string)) (status int, response interface{})) {
@@ -186,6 +197,10 @@ func (jokerEngine *JokerEngine) Run() {
 	http.ListenAndServe(":"+strconv.Itoa(jokerEngine.port), nil)
 }
 
+func (jokerEngine *JokerEngine) RunWithAddr(addr string) {
+	http.ListenAndServe(addr, nil)
+}
+
 func (jokerEngine *JokerEngine) MapRedirect(pattern string, target string) {
 	http.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
 		middlewareCount := len(jokerEngine.middlewares)
@@ -199,8 +214,7 @@ func (jokerEngine *JokerEngine) MapRedirect(pattern string, target string) {
 		}
 		copy(ctx.MiddlewareChains, jokerEngine.middlewares)
 		finalHandler := func(ctx *JokerContex) {
-			ctx.ResponseWriter.Header().Set("Location", target)
-			ctx.ResponseWriter.WriteHeader(http.StatusTemporaryRedirect)
+			http.Redirect(w, r, target, http.StatusFound)
 		}
 		ctx.MiddlewareChains[middlewareCount] = finalHandler
 		if len(ctx.MiddlewareChains) > 0 {
@@ -222,6 +236,7 @@ func newProxy(targetHost string) (*httputil.ReverseProxy, error) {
 func modifyResponse() func(*http.Response) error {
 	return func(resp *http.Response) error {
 		resp.Header.Set("X-Proxy", "JokerHttp")
+		resp.Header.Set("Server", "JokerHttp")
 		return nil
 	}
 }

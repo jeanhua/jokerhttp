@@ -178,3 +178,57 @@ func (router *JokerRouter) MapPost(pattern string, handle func(request *http.Req
 		}
 	})
 }
+
+func (router *JokerRouter) MapRedirect(pattern string, target string) {
+	pattern = router.prefix + pattern
+	http.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
+		middlewareCount_global := len(router.engine.middlewares)
+		middlewareCount_router := len(router.middlewares)
+		ctx := &JokerContex{
+			Request:          r,
+			ResponseWriter:   w,
+			MiddlewareChains: make([]Middleware, middlewareCount_global+middlewareCount_router+1),
+			index:            -1,
+			maxIndex:         middlewareCount_global + middlewareCount_router + 1,
+		}
+		copy(ctx.MiddlewareChains, router.engine.middlewares)
+		copy(ctx.MiddlewareChains[middlewareCount_global:], router.middlewares)
+		finalHandler := func(ctx *JokerContex) {
+			http.Redirect(w, r, target, http.StatusFound)
+		}
+		ctx.MiddlewareChains[middlewareCount_global+middlewareCount_router] = finalHandler
+		if len(ctx.MiddlewareChains) > 0 {
+			ctx.Next()
+		}
+	})
+}
+
+func (router *JokerRouter) MapReverseProxy(pattern string, target string) {
+	pattern = router.prefix + pattern
+	http.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
+		middlewareCount_global := len(router.engine.middlewares)
+		middlewareCount_router := len(router.middlewares)
+		ctx := &JokerContex{
+			Request:          r,
+			ResponseWriter:   w,
+			MiddlewareChains: make([]Middleware, middlewareCount_global+middlewareCount_router+1),
+			index:            -1,
+			maxIndex:         middlewareCount_global + middlewareCount_router + 1,
+		}
+		copy(ctx.MiddlewareChains, router.engine.middlewares)
+		copy(ctx.MiddlewareChains[middlewareCount_global:], router.middlewares)
+		finalHandler := func(ctx *JokerContex) {
+			proxy, err := newProxy(target)
+			if err != nil {
+				ctx.ResponseWriter.WriteHeader(500)
+				log.Println("[Error]:Handle in " + pattern + " >>> " + err.Error())
+				return
+			}
+			proxy.ServeHTTP(ctx.ResponseWriter, ctx.Request)
+		}
+		ctx.MiddlewareChains[middlewareCount_global+middlewareCount_router] = finalHandler
+		if len(ctx.MiddlewareChains) > 0 {
+			ctx.Next()
+		}
+	})
+}
