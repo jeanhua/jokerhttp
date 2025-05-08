@@ -95,7 +95,7 @@ engine.Use(LoggerMiddleware)
 
 ```go
 // Set a cache entry that expires in 5 minutes
-expiration := engine.Cache.AbsoluteTimeFromNow(5 * time.Minute)
+expiration := utils.AbsoluteTimeFromNow(5 * time.Minute)
 engine.Cache.Set("user:123", userData, expiration)
 
 // Retrieve from cache

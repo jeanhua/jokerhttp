@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jeanhua/jokerhttp/engine"
+	"github.com/jeanhua/jokerhttp/utils"
 )
 
 func main() {
@@ -55,7 +56,7 @@ func main() {
 		minutes := time.Now().Minute()
 		hours := time.Now().Hour()
 		seconds := time.Now().Second()
-		joker.Cache.Set("myKey", map[string]interface{}{"time": fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)}, joker.Cache.AbsoluteTimeFromNow(time.Second*60)) // 60秒后过期
+		joker.Cache.Set("myKey", map[string]interface{}{"time": fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)}, utils.AbsoluteTimeFromNow(time.Second*60)) // 60秒后过期
 		return 200, map[string]interface{}{"message": "Cache set!"}
 	})
 

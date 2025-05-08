@@ -95,7 +95,7 @@ engine.Use(LoggerMiddleware)
 
 ```go
 // 设置5分钟后过期的缓存
-expiration := engine.Cache.AbsoluteTimeFromNow(5 * time.Minute)
+expiration := utils.AbsoluteTimeFromNow(5 * time.Minute)
 engine.Cache.Set("user:123", userData, expiration)
 
 // 从缓存获取

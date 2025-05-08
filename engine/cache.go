@@ -94,7 +94,3 @@ func (c *jokerCache) Clear() {
 		delete(c.cacheMap, key)
 	}
 }
-
-func (c *jokerCache) AbsoluteTimeFromNow(duration time.Duration) int64 {
-	return time.Now().Add(duration).Unix()
-}
