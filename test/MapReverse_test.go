@@ -3,11 +3,11 @@ package test
 import (
 	"testing"
 
-	"github.com/jeanhua/jokerhttp"
+	"github.com/jeanhua/jokerhttp/engine"
 )
 
 func TestMapReverse(t *testing.T) {
-	joker := jokerhttp.NewEngine()
+	joker := engine.NewEngine()
 	joker.Init()
 	joker.SetPort(1314)
 	joker.MapReverseProxy("/", "https://imarket.jeanhua.cn")

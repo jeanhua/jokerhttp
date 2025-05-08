@@ -6,13 +6,12 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/jeanhua/jokerhttp"
 	"github.com/jeanhua/jokerhttp/engine"
 )
 
 func main() {
 	// 初始化引擎
-	joker := jokerhttp.NewEngine()
+	joker := engine.NewEngine()
 	joker.Init()
 	joker.SetPort(1314)
 

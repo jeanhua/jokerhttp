@@ -2,7 +2,6 @@ package engine
 
 import (
 	"encoding/json"
-	"io"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -16,6 +15,10 @@ type JokerEngine struct {
 	port        int
 	middlewares []Middleware
 	Cache       *jokerCache
+}
+
+func NewEngine() *JokerEngine {
+	return &JokerEngine{}
 }
 
 func (jokerEngine *JokerEngine) Init() {
@@ -144,25 +147,13 @@ func (jokerEngine *JokerEngine) MapPost(pattern string, handle func(request *htt
 				w.WriteHeader(405)
 				return
 			}
-			var body []byte
-			var err error
-
-			if r.Header.Get("Content-Type") == "application/json" {
-				body, err = io.ReadAll(r.Body)
-				if err != nil {
-					log.Println("[Error]: Failed to read request body:", err)
-					w.WriteHeader(http.StatusBadRequest)
-					return
-				}
-				defer r.Body.Close()
-			} else {
-				err := r.ParseForm()
-				if err != nil {
-					log.Println("[Error]: Failed to parse form:", err)
-					w.WriteHeader(400)
-					return
-				}
+			body := make([]byte, r.ContentLength)
+			_, err := r.Body.Read(body)
+			if err != nil {
+				log.Println("[Error]:Handle in " + pattern + " >>> " + err.Error())
+				return
 			}
+			defer r.Body.Close()
 			params := r.URL.Query()
 			status, response := handle(r, body, params, func(key, value string) {
 				w.Header().Set(key, value)
