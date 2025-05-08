@@ -20,7 +20,7 @@ JokerHTTP 是一个轻量级、灵活的 Go HTTP 引擎，让 Web 开发变得�
 ## 安装 📦
 
 ```bash
-go get github.com/jeanhua/jokerhttp
+go get -u github.com/jeanhua/jokerhttp
 ```
 
 ## 快速开始 🚀
@@ -29,7 +29,7 @@ go get github.com/jeanhua/jokerhttp
 package main
 
 import (
-	"github.com/jeanhua/jokerhttp"
+    "github.com/jeanhua/jokerhttp/engine"
 	"net/http"
 )
 
@@ -104,6 +104,62 @@ if value, ok := engine.Cache.TryGet("user:123"); ok {
 }
 ```
 
+## 路由示例 🌐
+
+下面是一个完整的路由使用示例，包含分组路由和中间件：
+
+```go
+package main
+
+import (
+    "github.com/jeanhua/jokerhttp/engine"
+    "net/http"
+    "net/url"
+)
+
+func main() {
+    // 初始化引擎
+    joker := jokerhttp.NewEngine()
+    joker.Init()
+    joker.SetPort(1314)
+
+    // 创建路由器
+    router := joker.NewRouter()
+
+    // 根路由分组
+    root := router.Group("/")
+    root.Use(func(ctx *engine.JokerContex) {
+        ctx.ResponseWriter.Header().Add("middleware", "root")
+        ctx.Next()
+    })
+
+    // 子路由分组 /api1
+    api1 := root.Group("/api1")
+    api1.Use(func(ctx *engine.JokerContex) {
+        ctx.ResponseWriter.Header().Add("middleware", "api1")
+        ctx.Next()
+    })
+    api1.Map("/test", func(request *http.Request, params url.Values, setHeaders func(key, value string)) (status int, response interface{}) {
+        return 200, "api1 test"
+    })
+
+    // 子路由分组 /api2
+    api2 := root.Group("/api2")
+    api2.Use(func(ctx *engine.JokerContex) {
+        ctx.ResponseWriter.Header().Add("middleware", "api2")
+        ctx.Next()
+    })
+    api2.Map("/test", func(request *http.Request, params url.Values, setHeaders func(key, value string)) (status int, response interface{}) {
+        return 200, "api2 test"
+    })
+
+    // 启动服务
+    joker.Run()
+}
+```
+
+
+
 ## 贡献指南 🤝
 
 欢迎贡献！请提交 issue 或 pull request。
@@ -114,4 +170,4 @@ MIT 许可证 - 详见 [LICENSE](./LICENSE) 文件。
 
 ---
 
-©jeanhua 始于 2025
+©jeanhua Since 2025
