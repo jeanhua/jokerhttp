@@ -14,7 +14,7 @@ type jokerCache struct {
 
 type cacheItem struct {
 	expiresAt int64
-	Value     interface{}
+	value     interface{}
 }
 
 func (c *jokerCache) init() {
@@ -55,7 +55,7 @@ func (c *jokerCache) Set(key string, value interface{}, expiresAt int64) {
 	defer c.mu.Unlock()
 	c.cacheMap[key] = &cacheItem{
 		expiresAt: expiresAt,
-		Value:     value,
+		value:     value,
 	}
 }
 
@@ -75,7 +75,7 @@ func (c *jokerCache) TryGet(key string) (interface{}, bool) {
 	}
 	c.mu.RUnlock()
 	if ok {
-		return value.Value, true
+		return value.value, true
 	} else {
 		return nil, false
 	}

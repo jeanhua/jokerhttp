@@ -3,6 +3,7 @@ package test
 import (
 	"net/http"
 	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/jeanhua/jokerhttp/engine"
@@ -54,5 +55,21 @@ func TestRouterProxy(t *testing.T) {
 	router := joker.NewRouter()
 	root := router.Group("/api")
 	root.MapReverseProxy("/", "https://imarket.jeanhua.cn/")
+	joker.Run()
+}
+
+func TestRouterParam(t *testing.T) {
+	joker := engine.NewEngine()
+	joker.Init()
+	joker.SetPort(1314)
+	router := joker.NewRouter()
+	root := router.Group("/api")
+	root.Map("/test/", func(request *http.Request, params url.Values, setHeaders func(key, value string)) (status int, response interface{}) {
+		path := strings.Split(request.URL.Path, "/")
+		if len(path) < 4 {
+			return 400, "error"
+		}
+		return 200, strings.Split(request.URL.Path, "/")[3]
+	})
 	joker.Run()
 }
