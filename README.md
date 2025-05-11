@@ -3,7 +3,7 @@
 ![Go 版本](https://img.shields.io/badge/Go-1.16+-blue.svg)
 [![许可证](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
-<p aligen="center">中文简体 | <a href="README_en.md">English</a></p>
+<p align="center">中文简体 | <a href="README_en.md">English</a></p>
 
 JokerHTTP 是一个轻量级、灵活的 Go HTTP 引擎，让 Web 开发变得简单有趣！🎉
 
